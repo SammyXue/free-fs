@@ -63,20 +63,20 @@ fs:
   tenant:
     enable: true
     ignoreTables:
-    - sys_user
-    - sys_user_role
-    - sys_role_auth
-    - sys_role
-    - sys_auth
+      - sys_user
+      - sys_user_role
+      - sys_role_auth
+      - sys_role
+      - sys_auth
 
   # 云存储配置
   files-server:
-    type: local
+    type: obs
     local:
       uploadPath: D:/data/upload  #windows
       #upload-path: /home/data/upload   #linux
       #nginx映射本地目录的url，需自己配置
-      ngxinxUrl: http://localhost:4344/resource
+      ngxinxUrl: http://localhost:4344/
     qiniu:
       accessKey: xxxxxxxxxxxxxxxxxxx
       secretKey: xxxxxxxxxxxxxxxxxxx
@@ -89,3 +89,9 @@ fs:
       endpoint: xxxxxxxxxxxxxxxxxxx
       bucket: xxxxxxxxxxxxxxxxxxx
       path: xxxxxxxxxxxxxxxxxxx
+    obs:
+      endPoint: obs.cn-east-3.myhuaweicloud.com
+      accessKey: ZP9LPMTXYE9K1XJREHS4
+      secretKey: OM8Wj9tLNvHSoeS0rbWKXspiY02AsiORIvKXIPsS
+      bucket: test-xcm2
+      url: https://test-xcm2.obs-website.cn-east-3.myhuaweicloud.com

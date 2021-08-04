@@ -24,4 +24,7 @@ public interface FileMapper extends BaseMapper<FilePojo> {
      */
     @SqlParser(filter = true)
     List<FilePojo> selectParentList(Long id);
+
+    @SqlParser(filter = true)
+    FilePojo selectByParentAndName(Long parentId,String name);
 }

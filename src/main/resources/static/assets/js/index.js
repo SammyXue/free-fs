@@ -2,8 +2,8 @@ layui.config({
     base: '../assets/modules/'
 }).extend({
     contextMenu: 'contextMenu',
-    dtree: 'dtree/dtree'
-}).use(['jquery', 'layer', 'element', 'upload', 'laytpl', 'util', 'contextMenu', 'form', 'dtree'], function () {
+    dtree: 'dtree/dtree',
+}).use(['jquery', 'layer', 'element', 'upload', 'laytpl', 'util', 'contextMenu', 'form', 'dtree', 'laydate'], function () {
     var $ = layui.jquery;
     var layer = layui.layer;
     var element = layui.element;
@@ -13,6 +13,7 @@ layui.config({
     var contextMenu = layui.contextMenu;
     var form = layui.form;
     var dtree = layui.dtree;
+    var laydate = layui.laydate;
     var xhrOnProgress = function (fun) {
         xhrOnProgress.onprogress = fun; //绑定监听
         //使用闭包实现监听绑
@@ -181,24 +182,40 @@ layui.config({
     $('#btnUploadSharding').click(function () {
         layer.open({
             type: 1,
-            area: ['1000px', '600px'],
-            title: '分片上传',
+            area: ['600px', '600px'],
+            title: '上传',
             content: $('#uploadShardModel').html(),
             shade: [0.6, '#393D49'],
             closeBtn: 2,
             success: function (layero, index0) {
+                //日期
+                laydate.render({
+                    elem: '#date' //指定元素
+                });
+                form.render();
+
+
                 var uploadListView = $('#uploadList')
                     ,uploadListIns = upload.render({
                     elem: '#uploadShardList'
-                    ,url: '/file/uploadSharding'
+                    ,url: '/file/standardUpload'
                     ,accept: 'file'
                     ,multiple: false
                     ,auto: false
                     ,bindAction: '#testListAction'
                     ,data: {
-                        dirIds: function () {
-                            return $('#tvFPId').text();
-                        }
+                        // dirIds: function () {
+                        //     return $('#tvFPId').text();
+                        // },
+                        date:function (){
+                          return  $('#date').val();
+                        },
+                        product:function (){
+                            return  $('#product').val();
+                        },
+                        flavor:function (){
+                            return  $('#flavor').val();
+                        },
                     }
                     , xhr: xhrOnProgress,
                     progress: function (value) {
@@ -247,10 +264,16 @@ layui.config({
                                 delete files[index]; //删除对应的文件
                                 tr.remove();
                                 uploadListIns.config.elem.next()[0].value = ''; //清空 input file 值，以免删除后出现同名文件不可选
+                                $('#uploadShardList').removeClass("layui-btn-disabled");
+                                $('#uploadShardList').addClass("layui-btn-normal");
                             });
                             uploadListView.append(tr);
                             element.render();
                         });
+                        // layer.msg($('#date').val())
+                        $('#uploadShardList').removeClass("layui-btn-normal");
+                        $('#uploadShardList').addClass("layui-btn-disabled");
+
                     },
                     done: function(res, index, upload){
                         if (res.code === 200) { //上传成功

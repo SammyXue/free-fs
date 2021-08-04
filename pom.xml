@@ -195,7 +195,12 @@
             <artifactId>thymeleaf-extras-shiro</artifactId>
             <version>${thymeleaf-extras-shiro.version}</version>
         </dependency>
-
+        <!--华为云obs-->
+        <dependency>
+            <groupId>com.huaweicloud</groupId>
+            <artifactId>esdk-obs-java</artifactId>
+            <version>3.21.4.1</version>
+        </dependency>
         <!-- hutool java工具类库  -->
         <dependency>
             <groupId>cn.hutool</groupId>

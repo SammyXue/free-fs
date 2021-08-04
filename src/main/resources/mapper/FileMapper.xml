@@ -18,4 +18,11 @@
         ORDER BY
         T1.lvl DESC
     </select>
+
+    <select id="selectByParentAndName" resultType="com.free.fs.model.FilePojo">
+        SELECT
+        *
+        FROM
+        file_Info where name = #{name}and parent_id =#{parentId}
+    </select>
 </mapper>

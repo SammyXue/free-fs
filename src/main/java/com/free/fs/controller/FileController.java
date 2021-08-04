@@ -86,9 +86,24 @@ public class FileController extends BaseController {
      * @return
      */
     @PostMapping({"", "/upload"})
-    public R upload(@RequestParam(value = "file") MultipartFile[] files, String dirIds) {
+    public R upload(@RequestParam(value = "file") MultipartFile[] files , @RequestParam(value = "dirIds") String dirIds) {
 
         return fileService.upload(files, dirIds);
+
+    }
+
+    /**
+     * 通过产品类型、口味、批号来上传报告
+     *
+     * @param files
+     * @param product   类型
+     * @param flavor 口味
+     * @param date   日期
+     * @return
+     */
+    @PostMapping( "/standardUpload")
+    public R standardUpload(@RequestParam(value = "file") MultipartFile[] files, @RequestParam(value = "product") String product, @RequestParam(value = "flavor") String flavor, @RequestParam(value = "date") String date) {
+        return fileService.standardUpload(files, product, flavor, date);
 
     }
 
@@ -124,7 +139,7 @@ public class FileController extends BaseController {
     public void resetPercent(HttpServletRequest request) {
         HttpSession session = request.getSession();
         session.setAttribute("uploadPercent", 0);
-       // ossUploadUtils.initPart();
+        // ossUploadUtils.initPart();
     }
 
     /**

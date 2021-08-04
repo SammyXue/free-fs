@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.free.fs.common.constant.CommonConstant;
 import com.free.fs.common.exception.BusinessException;
 import com.free.fs.common.utils.R;
+import com.free.fs.common.utils.StringUtil;
 import com.free.fs.mapper.FileMapper;
 import com.free.fs.model.Dtree;
 import com.free.fs.model.FilePojo;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
  * @author dinghao
  * @date 2021/4/6
  */
+@Transactional(rollbackFor = Exception.class)
 public abstract class AbstractIFileService extends ServiceImpl<FileMapper, FilePojo> implements FileService {
 
     @SuppressWarnings("unchecked")
@@ -49,13 +51,13 @@ public abstract class AbstractIFileService extends ServiceImpl<FileMapper, FileP
     public List<Dtree> getTreeList(FilePojo pojo) {
         List<FilePojo> filePojos = baseMapper.selectList(
                 new LambdaQueryWrapper<FilePojo>()
-                        .eq(pojo.getIsDir()!=null && pojo.getIsDir(), FilePojo::getIsDir, pojo.getIsDir())
+                        .eq(pojo.getIsDir() != null && pojo.getIsDir(), FilePojo::getIsDir, pojo.getIsDir())
                         .orderByDesc(FilePojo::getIsDir, FilePojo::getPutTime)
         );
         List<Dtree> dtrees = new ArrayList<>();
         filePojos.forEach(item -> {
             Dtree dtree = new Dtree();
-            BeanUtils.copyProperties(item,dtree);
+            BeanUtils.copyProperties(item, dtree);
             dtree.setTitle(item.getName());
             //设置图标
             if (dtree.getIsDir()) {
@@ -66,9 +68,9 @@ public abstract class AbstractIFileService extends ServiceImpl<FileMapper, FileP
             dtrees.add(dtree);
         });
         return dtrees.stream()
-                     .filter(m -> m.getParentId() == -1)
-                     .peek((m) -> m.setChildren(getChildrens(m, dtrees)))
-                     .collect(Collectors.toList());
+                .filter(m -> m.getParentId() == -1)
+                .peek((m) -> m.setChildren(getChildrens(m, dtrees)))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -87,13 +89,13 @@ public abstract class AbstractIFileService extends ServiceImpl<FileMapper, FileP
 
     private List<Dtree> getChildrens(Dtree root, List<Dtree> all) {
         return all.stream()
-                  .filter(m -> Objects.equals(m.getParentId(), root.getId()))
-                    .peek((m) -> m.setChildren(getChildrens(m, all)))
+                .filter(m -> Objects.equals(m.getParentId(), root.getId()))
+                .peek((m) -> m.setChildren(getChildrens(m, all)))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public R upload(MultipartFile[] files, String dirIds){
+    public R upload(MultipartFile[] files, String dirIds) {
         if (files == null || files.length == 0) {
             throw new BusinessException("文件不能为空");
         }
@@ -115,19 +117,55 @@ public abstract class AbstractIFileService extends ServiceImpl<FileMapper, FileP
         return R.succeed("上传成功");
     }
 
+    @Override
+    public R standardUpload(MultipartFile[] files, String product, String flavor, String date) {
+        if (StringUtils.isEmpty(product) || StringUtils.isEmpty(flavor) || StringUtils.isEmpty(date)) {
+            throw new BusinessException("参数不能为空");
+        }
+//
+
+        String dirs = product + CommonConstant.DIR_SPLIT + flavor + CommonConstant.DIR_SPLIT + date;
+        return upload(files, addFolderRecursively(dirs));
+    }
+
+
+    /**
+     * str目录 转换成id目录 没有则创建
+     *
+     * @param dirs
+     * @return
+     */
+    private String addFolderRecursively(String dirs) {
+        String[] split = dirs.split(CommonConstant.DIR_SPLIT);
+        long parentId = -1l;
+        String dirIds = "";
+        for (String s : split) {
+            FilePojo productFile = baseMapper.selectByParentAndName(parentId, s);
+            if (productFile == null) {
+                productFile = new FilePojo();
+                productFile.setName(s);
+                productFile.setDirIds(dirIds);
+                addFolder(productFile);
+            }
+            parentId = productFile.getId();
+            dirIds = dirIds + "/" + parentId;
+        }
+        return dirIds;
+    }
+
     /**
      * 递归查询查询name是否存在，如果存在，则给name+(flag)
      *
      * @param sname 原name
      * @param rname 修改后name
-     * @param flag 标记值
+     * @param flag  标记值
      * @return
      */
     private String recursionFindName(String sname, String rname, Long parentId, int flag) {
         Integer count = baseMapper.selectCount(new LambdaQueryWrapper<FilePojo>()
                 .eq(FilePojo::getName, rname)
-                .eq(FilePojo::getIsDir,Boolean.FALSE)
-                .eq(FilePojo::getParentId,parentId));
+                .eq(FilePojo::getIsDir, Boolean.FALSE)
+                .eq(FilePojo::getParentId, parentId));
         if (count > 0) {
             flag++;
             rname = sname + "(" + flag + ")";
@@ -173,11 +211,14 @@ public abstract class AbstractIFileService extends ServiceImpl<FileMapper, FileP
      * @param file
      * @param session
      */
-    protected abstract FilePojo uploadFileSharding(MultipartFile file,HttpSession session);
+    protected abstract FilePojo uploadFileSharding(MultipartFile file, HttpSession session);
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public boolean delete(String url){
+    public boolean delete(String url) {
+        if (StringUtils.isEmpty(url)){
+            throw new BusinessException("url为空");
+        }
         //先删除数据库
         if (baseMapper.delete(new LambdaQueryWrapper<FilePojo>().eq(FilePojo::getUrl, url)) <= 0) {
             throw new BusinessException("资源删除失败");
@@ -210,9 +251,9 @@ public abstract class AbstractIFileService extends ServiceImpl<FileMapper, FileP
         //判断文件夹名称在当前目录中是否存在
         Integer count = baseMapper.selectCount(
                 new LambdaQueryWrapper<FilePojo>()
-                        .eq(FilePojo::getName,pojo.getName())
-                        .eq(FilePojo::getIsDir,Boolean.TRUE)
-                        .eq(FilePojo::getParentId,pojo.getParentId())
+                        .eq(FilePojo::getName, pojo.getName())
+                        .eq(FilePojo::getIsDir, Boolean.TRUE)
+                        .eq(FilePojo::getParentId, pojo.getParentId())
         );
         if (count > 0) {
             throw new BusinessException("当前目录名称已存在，请修改后重试！");
@@ -230,8 +271,8 @@ public abstract class AbstractIFileService extends ServiceImpl<FileMapper, FileP
         Integer count = baseMapper.selectCount(
                 new LambdaQueryWrapper<FilePojo>()
                         .eq(FilePojo::getName, pojo.getRename())
-                        .eq(FilePojo::getIsDir,p.getIsDir())
-                        .eq(FilePojo::getParentId,p.getParentId())
+                        .eq(FilePojo::getIsDir, p.getIsDir())
+                        .eq(FilePojo::getParentId, p.getParentId())
         );
         if (count > 0) {
             throw new BusinessException("当前目录已存在该名称,请修改后重试！");
@@ -245,7 +286,7 @@ public abstract class AbstractIFileService extends ServiceImpl<FileMapper, FileP
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public boolean deleteByIds(Long id){
+    public boolean deleteByIds(Long id) {
         //id集合
         List<Long> idList = new ArrayList<>();
         //资源key集合

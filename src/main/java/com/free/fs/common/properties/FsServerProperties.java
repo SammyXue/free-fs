@@ -35,4 +35,9 @@ public class FsServerProperties {
      * oss配置
      */
     OssProperties oss = new OssProperties();
+
+    /**
+     * 华为云obs配置
+     */
+    ObsProperties obs = new ObsProperties();
 }

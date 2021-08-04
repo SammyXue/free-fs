@@ -53,6 +53,17 @@ public interface FileService extends IService<FilePojo> {
     R upload(MultipartFile[] files, String dirIds);
 
     /**
+     * 通过产品类型、口味、批号来上传报告
+     *
+     * @param files
+     * @param type   类型
+     * @param flavor 口味
+     * @param date   日期
+     * @return
+     */
+    R standardUpload(MultipartFile[] files, String product, String flavor, String date);
+
+    /**
      * 分片上传大文件
      *
      * @param files
